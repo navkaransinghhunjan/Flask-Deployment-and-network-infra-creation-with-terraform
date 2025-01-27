@@ -90,11 +90,11 @@ graph TD
 
 --------------------------------------------------
 Variable     |	Description	      | Default Value
--------------|-------------------|----------------
-region	    | AWS region	      | ap-south-1
-cidr	       | VPC CIDR block	   | 10.0.0.0/16
+-------------|--------------------|----------------
+region	     | AWS region	        | ap-south-1
+cidr	       | VPC CIDR block	    | 10.0.0.0/16
 instance_type|	EC2 instance type	| t2.micro
-ssh_ip	    | Allowed SSH IP	   | 0.0.0.0/0
+ssh_ip	     | Allowed SSH IP	    | 0.0.0.0/0
 
 ### Application
 
@@ -140,7 +140,7 @@ Common Issues
 
 ------------------------------------------------------------------------------
 Error	                        |    Solution
-------------------------------------------------------------------------------
+------------------------------|-----------------------------------------------
 ```SSH Connection Refused```  |	Verify security group rules and key pair
 ------------------------------------------------------------------------------
 ```Port 80 Not Accessible```	| Check authbind configuration in provisioner
