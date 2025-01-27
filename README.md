@@ -2,7 +2,7 @@
 
 [![Terraform Version](https://img.shields.io/badge/terraform-%3E%3D1.3.0-blue.svg)](https://www.terraform.io/)
 [![AWS Provider](https://img.shields.io/badge/AWS-Provider-orange.svg)](https://registry.terraform.io/providers/hashicorp/aws/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 A Terraform project to deploy a Flask application on AWS infrastructure with proper networking and security configurations.
 
@@ -138,15 +138,16 @@ terraform destroy
 
 Common Issues
 
-Error	                            Solution
+--------------------------------------------------------------------------
+Error	                        |    Solution
 ---------------------------------------------------------------------------
-```SSH Connection Refused```  	Verify security group rules and key pair
+```SSH Connection Refused```  |	Verify security group rules and key pair
 ---------------------------------------------------------------------------
-```Port 80 Not Accessible```	Check authbind configuration in provisioner
+```Port 80 Not Accessible```	| Check authbind configuration in provisioner
 ---------------------------------------------------------------------------
-```AMI Not Found```	Update AMI filter in data "aws_ami" block
+```AMI Not Found```	         | Update AMI filter in data "aws_ami" block
 ---------------------------------------------------------------------------
-```Terraform Plan Errors```	Run terraform validate to check configuration
+```Terraform Plan Errors```   | Run terraform validate to check configuration
 
 ### View Logs
 
