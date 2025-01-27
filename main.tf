@@ -1,35 +1,52 @@
 # Provider configuration
 provider "aws" {
-  region = "ap-south-1" # Replace with your desired AWS region
+  region = var.region
 }
 
-# Variables
-variable "cidr" {
-  default = "10.0.0.0/16"
+# Data source for Ubuntu AMI
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+  owners = ["099720109477"] # Canonical
 }
 
 # Key Pair
 resource "aws_key_pair" "key-pair" {
-  key_name   = "my_laptop_ssh" # Replace with your desired key name
-  public_key = file("~/.ssh/id_ed25519.pub") # Replace with the path to your public key
+  key_name   = "flask-app-key"
+  public_key = file(var.public_key_path)
+  tags = {
+    Environment = "Production"
+  }
 }
 
 # VPC
 resource "aws_vpc" "myvpc" {
   cidr_block = var.cidr
+  tags = {
+    Name = "Flask-App-VPC"
+  }
 }
 
 # Subnet
 resource "aws_subnet" "sub1" {
   vpc_id                  = aws_vpc.myvpc.id
-  cidr_block              = var.cidr
-  availability_zone       = "ap-south-1a" # Replace with your desired AZ
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "${var.region}a"
   map_public_ip_on_launch = true
+  tags = {
+    Name = "Public-Subnet-1a"
+  }
 }
 
 # Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.myvpc.id
+  tags = {
+    Name = "Main-IGW"
+  }
 }
 
 # Route Table
@@ -39,6 +56,10 @@ resource "aws_route_table" "RT" {
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "Public-Route-Table"
   }
 }
 
@@ -50,11 +71,11 @@ resource "aws_route_table_association" "rta1" {
 
 # Security Group
 resource "aws_security_group" "webSg" {
-  name   = "web"
+  name   = "web-sg"
   vpc_id = aws_vpc.myvpc.id
 
   ingress {
-    description = "HTTP from VPC"
+    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -66,7 +87,7 @@ resource "aws_security_group" "webSg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.ssh_ip]
   }
 
   egress {
@@ -77,43 +98,46 @@ resource "aws_security_group" "webSg" {
   }
 
   tags = {
-    Name = "Web-sg"
+    Name = "Web-Security-Group"
   }
 }
 
 # EC2 Instance
 resource "aws_instance" "server" {
-  ami                    = "ami-00bb6a80f01f03502" # Replace with a suitable Ubuntu AMI
-  instance_type          = "t2.micro"
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
   key_name               = aws_key_pair.key-pair.key_name
   vpc_security_group_ids = [aws_security_group.webSg.id]
   subnet_id              = aws_subnet.sub1.id
 
   tags = {
-    NAME = "flask-app-instance"
+    Name = "Flask-App-Instance"
   }
 
   connection {
     type        = "ssh"
-    user        = "ubuntu" # Replace with your EC2 instance username
-    private_key = file("~/.ssh/id_ed25519") # Replace with the path to your private key
+    user        = "ubuntu"
+    private_key = file(var.private_key_path)
     host        = self.public_ip
   }
 
-  # File provisioner to copy Flask app to the instance
+  # File provisioner to copy Flask app
   provisioner "file" {
-    source      = "app.py" # Replace with the path to your Flask app
+    source      = "app.py"
     destination = "/home/ubuntu/app.py"
   }
 
-  # Remote-exec provisioner to install dependencies and start Flask app
+  # Install dependencies and start app
   provisioner "remote-exec" {
     inline = [
       "sudo apt update -y",
-      "sudo apt-get install -y python3-venv",
+      "sudo apt-get install -y python3-venv authbind",
       "python3 -m venv /home/ubuntu/venv",
       "/home/ubuntu/venv/bin/pip install flask",
-      "/home/ubuntu/venv/bin/python /home/ubuntu/app.py &"
+      "sudo touch /etc/authbind/byport/80",
+      "sudo chmod 755 /etc/authbind/byport/80",
+      "sudo chown ubuntu /etc/authbind/byport/80",
+      "nohup authbind --deep /home/ubuntu/venv/bin/python /home/ubuntu/app.py > /home/ubuntu/flask.log 2>&1 &"
     ]
   }
 }

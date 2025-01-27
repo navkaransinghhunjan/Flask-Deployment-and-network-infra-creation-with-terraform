@@ -1,46 +1,159 @@
-# Flask Deployment with Terraform
+# Flask Application Deployment on AWS using Terraform
 
-This repository contains Terraform code for deploying a Flask application on AWS. The infrastructure is created and managed using Infrastructure as Code (IaC) principles with Terraform.
+[![Terraform Version](https://img.shields.io/badge/terraform-%3E%3D1.3.0-blue.svg)](https://www.terraform.io/)
+[![AWS Provider](https://img.shields.io/badge/AWS-Provider-orange.svg)](https://registry.terraform.io/providers/hashicorp/aws/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
+A Terraform project to deploy a Flask application on AWS infrastructure with proper networking and security configurations.
 
 ## Features
 
-- **AWS VPC:** A custom Virtual Private Cloud (VPC) with a public subnet.
-- **Flask Application Deployment:** Deploys a simple Flask application on an EC2 instance.
-- **Security Group:** Configures security groups for SSH and HTTP access.
-- **Provisioners:** Installs Flask, copies the application code, and runs the Flask server on the EC2 instance.
-- **Key Pair Management:** Uses an existing SSH key pair for instance authentication.
-
----
-
-## Architecture Overview
-
-1. **VPC:** A custom VPC is created with the CIDR block `10.0.0.0/16`.
-2. **Subnet:** A public subnet is configured within the VPC.
-3. **Internet Gateway:** Enables internet access for the EC2 instance.
-4. **EC2 Instance:** Hosts the Flask application.
-5. **Security Group:** 
-   - Allows inbound SSH traffic (port 22) from anywhere.
-   - Allows inbound HTTP traffic (port 80) from anywhere.
-
----
+- 🚀 **Automatic Deployment**: Full infrastructure-as-code setup
+- 🔒 **Security**: Configured security groups with restricted SSH access
+- 🌐 **Networking**: Includes VPC, subnet, internet gateway, and route tables
+- 📦 **Provisioning**: Automatic dependency installation and application startup
+- 📡 **Public Access**: Flask application accessible via public IP
+- 💻 **SSH Access**: Pre-configured key-based authentication
 
 ## Prerequisites
 
-1. **AWS CLI Installed:** [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html).
-2. **Terraform Installed:** [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli).
-3. **SSH Key Pair:**
-   - Ensure an SSH key pair exists on your system (`~/.ssh/id_ed25519`).
-   - Update the path in the Terraform code if using a different key.
-4. **AWS Account:**
-   - Configure your credentials using `aws configure`.
+- [Terraform](https://www.terraform.io/downloads.html) (>=1.3.0)
+- [AWS CLI](https://aws.amazon.com/cli/) configured with credentials
+- SSH key pair in `~/.ssh/` directory
+- AWS account with necessary permissions
 
----
+## Quick Start
 
-## Getting Started
+### 1. Clone Repository
+```bash
+git clone https://github.com/your-username/flask-terraform-deployment.git
+cd flask-terraform-deployment
+```
 
-1. Clone this repository:
-   ```bash
-   git clone git@github.com:navkaransinghhunjan/infra-with-terraform.git
-   cd infra-with-terraform
+### 2. Configure AWS Credentials
+
+```bash   Copy
+aws configure
+```
+### 3. Modify Variables (Optional)
+### Edit variables.tf to customize:
+
+```terraform   Copy
+variable "region" {
+  default = "ap-south-1" # Change AWS region
+}
+
+variable "ssh_ip" {
+  default = "YOUR_IP/32" # Restrict SSH access
+}
+```
+
+### 4. Initialize Terraform
+
+```bash   Copy
+terraform init
+```
+
+### 5. Deploy Infrastructure
+
+```bash
+Copy
+terraform apply
+```
+
+## Architecture Diagram
+
+```mermaid   Copy
+graph TD
+    A[Internet] --> B[Internet Gateway]
+    B --> C[VPC]
+    C --> D[Public Subnet]
+    D --> E[EC2 Instance]
+    E --> F[Security Group]
+    F -->|Allows HTTP/80| A
+    F -->|Restricted SSH/22| G[Your IP]
+```
+
+## Project Structure
+
+```Copy
+.
+├── main.tf          # Primary infrastructure configuration
+├── variables.tf     # Input variables
+├── outputs.tf       # Output values
+├── app.py           # Flask application
+├── README.md        # Documentation
+└── .gitignore       # Ignore Terraform files
+```
+
+## Customization
+### Variables
+
+--------------------------------------------------
+Variable     |	Description	      | Default Value
+-------------|-------------------|----------------
+region	    | AWS region	      | ap-south-1
+-------------|-------------------|----------------
+cidr	       | VPC CIDR block	   | 10.0.0.0/16
+-------------|-------------------|----------------
+instance_type|	EC2 instance type	| t2.micro
+-------------|-------------------|----------------
+ssh_ip	    | Allowed SSH IP	   | 0.0.0.0/0
+
+### Application
+
+1. Modify ```app.py``` to change Flask application behavior
+
+2. Commit changes and re-run ```terraform apply```
+
+## Accessing the Application
+### After deployment:
+
+```bash    Copy
+curl $(terraform output -raw flask_app_url)
+```
+
+## Best Practices
+### 1. Security:
+
+* Always restrict SSH access to your IP
+
+* Rotate SSH keys regularly
+
+* Use IAM roles instead of access keys
+
+2. Cost Management:
+
+* Use t2.micro instances for free tier
+
+* Destroy infrastructure when not in use
+
+```bash  Copy
+terraform destroy
+```
+
+3. Monitoring:
+
+* Enable CloudWatch monitoring
+
+* Set up billing alerts
+
+## Troubleshooting
+
+Common Issues
+---------------------------------------------------------------------------
+Error	                            Solution
+---------------------------------------------------------------------------
+```SSH Connection Refused```  	Verify security group rules and key pair
+---------------------------------------------------------------------------
+```Port 80 Not Accessible```	Check authbind configuration in provisioner
+---------------------------------------------------------------------------
+```AMI Not Found```	Update AMI filter in data "aws_ami" block
+---------------------------------------------------------------------------
+```Terraform Plan Errors```	Run terraform validate to check configuration
+
+### View Logs
+
+```bash   Copy
+ssh -i ~/.ssh/id_ed25519 ubuntu@$(terraform output -raw instance_public_ip) "tail -f /home/ubuntu/flask.log"
+```
