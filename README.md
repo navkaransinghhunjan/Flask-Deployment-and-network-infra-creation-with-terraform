@@ -142,11 +142,8 @@ Common Issues
 Error	                        |    Solution
 ------------------------------|-----------------------------------------------
 ```SSH Connection Refused```  |	Verify security group rules and key pair
-------------------------------|-----------------------------------------------
 ```Port 80 Not Accessible```	| Check authbind configuration in provisioner
-------------------------------|-----------------------------------------------
 ```AMI Not Found```	          | Update AMI filter in data "aws_ami" block
-------------------------------|-----------------------------------------------
 ```Terraform Plan Errors```   | Run terraform validate to check configuration
 
 ### View Logs
